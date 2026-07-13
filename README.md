@@ -4,6 +4,14 @@
 
 ConstructPro is a comprehensive management application designed to handle complex relational data securely and efficiently. 
 
+## ✨ Key Features
+
+- **Project & Client Management:** Track clients and their associated construction projects from start to finish.
+- **Workforce & Attendance:** Manage workers and subcontractors, including real-time daily attendance and labor ledgers.
+- **Financial Tracking:** Keep a tight grip on cash flow by logging material expenses, payments received, and project outgoings.
+- **Robust Reporting:** Generate daily, weekly, and monthly reports on project progress and financials.
+- **Offline-Ready:** Local caching with SQLite ensures the mobile app works seamlessly even on construction sites with spotty internet connections.
+
 ## 🚀 The Tech Stack (Why you should care)
 
 **Backend:**
