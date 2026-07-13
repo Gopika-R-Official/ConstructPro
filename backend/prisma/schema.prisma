@@ -1,0 +1,219 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  password  String
+  role      String    @default("Owner") // Admin, Owner, Supervisor
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  refreshTokens RefreshToken[]
+  activityLogs  ActivityLog[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Client {
+  id        String    @id @default(uuid())
+  name      String
+  company   String?
+  phone     String?
+  location  String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  
+  projects  Project[]
+}
+
+model Project {
+  id          String    @id @default(uuid())
+  name        String
+  clientId    String
+  client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  status      String    @default("Active") // Active, Completed, Paused
+  budget      Float     @default(0)
+  startDate   DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  attendances Attendance[]
+  expenses    Expense[]
+  payments    Payment[]
+  workers     Worker[]
+  subcontractors Subcontractor[]
+  materials   Material[]
+
+  @@index([clientId])
+}
+
+model Worker {
+  id          String    @id @default(uuid())
+  name        String
+  role        String    // Labour, Mason, Carpenter, etc.
+  dailyWage   Float
+  phone       String?
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  attendances Attendance[]
+  payments    WorkerPayment[]
+
+  @@index([projectId])
+}
+
+model Attendance {
+  id          String    @id @default(uuid())
+  date        DateTime
+  workerId    String
+  worker      Worker    @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  status      String    // P, H, OH, A (Present, Half, Overtime, Absent)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([workerId])
+  @@index([projectId])
+}
+
+model Expense {
+  id          String    @id @default(uuid())
+  amount      Float
+  category    String    // Material, Transport, Food, Other
+  description String?
+  date        DateTime  @default(now())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([projectId])
+}
+
+model Payment {
+  id          String    @id @default(uuid())
+  amount      Float
+  date        DateTime  @default(now())
+  method      String    // Cash, Bank Transfer, UPI
+  description String?   // Installment details, e.g. "Installment 1"
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([projectId])
+}
+
+model ActivityLog {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action      String    // Added Expense, Added Attendance, etc.
+  details     String?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model Subcontractor {
+  id            String    @id @default(uuid())
+  name          String
+  category      String    // Electrical, Plumbing & Sanitary, etc.
+  contractValue Float
+  projectId     String
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  payments      SubcontractorPayment[]
+
+  @@index([projectId])
+}
+
+model SubcontractorPayment {
+  id              String        @id @default(uuid())
+  amount          Float
+  date            DateTime      @default(now())
+  method          String        // Cash, Bank Transfer, UPI
+  subcontractorId String
+  subcontractor   Subcontractor @relation(fields: [subcontractorId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  deletedAt       DateTime?
+
+  @@index([subcontractorId])
+}
+
+model Material {
+  id            String    @id @default(uuid())
+  type          String    // e.g., Cement, Steel, Sand, Brick
+  quantity      Float
+  unit          String    // e.g., bags, tons, units, loads
+  unitPrice     Float
+  purchasedDate DateTime  @default(now())
+  projectId     String
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  payments      MaterialPayment[]
+
+  @@index([projectId])
+}
+
+model MaterialPayment {
+  id          String    @id @default(uuid())
+  amount      Float
+  date        DateTime  @default(now())
+  method      String    // e.g., Cash, Bank Transfer, UPI
+  materialId  String
+  material    Material  @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([materialId])
+}
+
+model WorkerPayment {
+  id          String    @id @default(uuid())
+  amount      Float
+  date        DateTime  @default(now())
+  method      String    // Cash, Bank Transfer, UPI
+  workerId    String
+  worker      Worker    @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([workerId])
+}
